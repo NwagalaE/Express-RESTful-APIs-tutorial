@@ -1,17 +1,36 @@
-//const Joi = require('joi');//class
+const startupDebugger = require('debug')('app:startup');
+const config = require('config');
 const express = require('express');//returns a function
 const Joi = require('joi');
-
+const logger = require('./logger');
+const auth = require('./authenticator');
+const helmet = require('helmet')
+const morgan = require('morgan')
 //calling the function
 const app = express();
 
+
+app.set('view engine', 'pug')
+app.set('views', './views')//default
+
+
 app.use(express.json());
+app.use(express.urlencoded({extended : true})) //key=value&key=value
+app.use(express.static('public'));
 
 
+//configurations
+console.log("Application Name: " + config.get('name'));
+console.log("Mail Server: " + config.get('mail.host'));
+console.log("Mail Password: " + config.get('mail.password'));
 
-
-
-
+//built-in middleware
+app.use(logger)
+app.use(auth)
+if (app.get('env')==='development'){
+    app.use(morgan('tiny'));
+    startupDebugger('Morgan enabled...')
+}
 
 
 
@@ -73,11 +92,11 @@ app.put('api/courses/:id', (req,res)=>{
 
 //validation function
 function validateCourse(course) {
-    const schema = {
+    const schema = Joi.object({
         name: Joi.string().min(3).required()
-    };
+    });
 
-    return Joi.validate(course, schema);
+    return schema.validate(schema);
 }
 
 
